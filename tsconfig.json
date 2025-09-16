@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es2024", // Specify ECMAScript target version
+    "module": "nodenext", // Specify module code generation
+    "moduleResolution": "nodenext", // Specify module resolution strategy
+    "lib": ["ES2024", "DOM"], // Specify library files to include in the compilation
+    "strict": true, // Enable all strict type-checking options
+    "outDir": "dist", // Redirect output structure to the 'dist' directory
+    "rootDir": "src", // Specifies the root directory of input files
+    "esModuleInterop": true, // Enables emit interoperability between CommonJS and ES Modules
+    "moduleDetection": "force", // Force module detection to be based on the presence of 'package.json'
+    "skipLibCheck": true // Skip type checking of all declaration files (*.d.ts)
+  },
+  "include": ["src"] // Include all files in the 'src' directory
+}
