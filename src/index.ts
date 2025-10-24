@@ -1,4 +1,7 @@
 import Estudante from "./Estudante";
+import RegistroDisciplina from "./RegistroDisciplina";
+import RegistroPresenca from "./RegistroPresenca";
+import RegistroTurma from "./RegistroTurma";
 import RelatorioFrequencia from "./RelatorioFrequencia";
 import Turma from "./Turma";
 
@@ -30,3 +33,21 @@ info01.resgistrarPresencaGeral();
 RelatorioFrequencia.gerarRelatorioMensal(estudantes);
 info02.resgistrarPresencaGeral();
 RelatorioFrequencia.gerarRelatorioMensal(estudantes);
+
+const registrarPresenca1 = new RegistroPresenca(estudante1, new Date());
+registrarPresenca1.registrar();
+
+const registrarPresencaDisciplinaLTP = new RegistroDisciplina(
+  estudante2,
+  new Date(),
+  "LTP"
+);
+registrarPresencaDisciplinaLTP.registrar();
+RelatorioFrequencia.gerarRelatorioMensal(estudantes);
+
+const resgistrarPresencaTurmaLTP = new RegistroTurma(
+  estudante1,
+  new Date(),
+  info01
+);
+resgistrarPresencaTurmaLTP.registrar();
