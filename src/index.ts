@@ -4,6 +4,7 @@ import RegistroPresenca from "./RegistroPresenca";
 import RegistroTurma from "./RegistroTurma";
 import RelatorioFrequencia from "./RelatorioFrequencia";
 import Turma from "./Turma";
+import RegistroComAlerta from "./RegistroComAlerta";
 
 const estudantes: Estudante[] = [];
 
@@ -51,3 +52,22 @@ const resgistrarPresencaTurmaLTP = new RegistroTurma(
   info01
 );
 resgistrarPresencaTurmaLTP.registrar();
+
+// Exemplo de uso do RegistroComAlerta
+const registroComAlerta1 = new RegistroComAlerta(
+  estudante1,
+  new Date(),
+  "Matemática"
+);
+registroComAlerta1.registrar();
+
+// Outro exemplo
+const registroComAlerta2 = new RegistroComAlerta(
+  estudante2,
+  new Date(),
+  "Português"
+);
+registroComAlerta2.registrar();
+
+// Gerar relatório após os registros
+RelatorioFrequencia.gerarRelatorioMensal(estudantes);
