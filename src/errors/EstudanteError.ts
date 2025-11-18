@@ -7,7 +7,7 @@ export class EstudanteError extends Error {
 
 export class EstudanteNaoEncontradoError extends EstudanteError {
   constructor(id: number) {
-    super(`Estudante com ID ${id} não foi encontrado.`);
+    super(`Estudante com ID ${id} não encontrado ou não pertence à turma.`);
     this.name = "EstudanteNaoEncontradoError";
   }
 }

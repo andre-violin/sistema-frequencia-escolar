@@ -80,7 +80,21 @@ export class MeuErro extends Error {
 No arquivo `src/errors/EstudanteError.ts`:
 
 ```typescript
-export class DadosInvalidosError extends Error {
+export class EstudanteError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "EstudanteError";
+  }
+}
+
+export class EstudanteNaoEncontradoError extends EstudanteError {
+  constructor(id: number) {
+    super(`Estudante com ID ${id} não encontrado ou não pertence à turma.`);
+    this.name = "EstudanteNaoEncontradoError";
+  }
+}
+
+export class DadosInvalidosError extends EstudanteError {
   constructor(campo: string) {
     super(`Dados inválidos: ${campo}`);
     this.name = "DadosInvalidosError";
@@ -88,38 +102,139 @@ export class DadosInvalidosError extends Error {
 }
 ```
 
-**Análise do código:**
+**Análise detalhada do código:**
 
-1. `export class DadosInvalidosError extends Error`:
+#### 1. Classe Base: `EstudanteError`
 
-   - Cria uma nova classe que herda de `Error`
-   - `export` permite usar em outros arquivos
+```typescript
+export class EstudanteError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "EstudanteError";
+  }
+}
+```
 
-2. `constructor(campo: string)`:
+**Por que criar uma classe base?**
 
-   - Recebe o campo que está inválido como parâmetro
+- Agrupa todos os erros relacionados a estudantes
+- Permite capturar qualquer erro de estudante com um único `instanceof`
+- Facilita a organização e hierarquia de erros
 
-3. `super(\`Dados inválidos: ${campo}\`)`:
+**Elementos:**
 
-   - Chama o construtor da classe pai `Error`
-   - Define a mensagem do erro
+- `extends Error`: Herda da classe nativa `Error` do JavaScript
+- `constructor(message: string)`: Recebe a mensagem de erro
+- `super(message)`: Passa a mensagem para a classe pai `Error`
+- `this.name = "EstudanteError"`: Define o nome do erro para identificação
 
-4. `this.name = "DadosInvalidosError"`:
-   - Define o nome do erro para identificação
+#### 2. Classe: `EstudanteNaoEncontradoError`
+
+```typescript
+export class EstudanteNaoEncontradoError extends EstudanteError {
+  constructor(id: number) {
+    super(`Estudante com ID ${id} não encontrado ou não pertence à turma.`);
+    this.name = "EstudanteNaoEncontradoError";
+  }
+}
+```
+
+**Quando usar:**
+
+- Ao buscar um estudante por ID e não encontrar
+- Ao tentar remover um estudante que não está na turma
+- Em operações que dependem da existência do estudante
+
+**Elementos:**
+
+- `extends EstudanteError`: Herda de `EstudanteError` (não diretamente de `Error`)
+- `constructor(id: number)`: Recebe apenas o ID do estudante
+- Template string: Cria mensagem automática com o ID
+- Específico e informativo: Diz exatamente qual estudante não foi encontrado
+
+**Exemplo de uso:**
+
+```typescript
+const estudante = turma.buscarEstudante(999);
+// Se não encontrar: EstudanteNaoEncontradoError: Estudante com ID 999 não encontrado ou não pertence à turma.
+```
+
+#### 3. Classe: `DadosInvalidosError`
+
+```typescript
+export class DadosInvalidosError extends EstudanteError {
+  constructor(campo: string) {
+    super(`Dados inválidos: ${campo}`);
+    this.name = "DadosInvalidosError";
+  }
+}
+```
+
+**Quando usar:**
+
+- Validação de ID (deve ser maior que zero)
+- Validação de nome (não pode ser vazio)
+- Qualquer validação de dados de entrada
+
+**Elementos:**
+
+- `extends EstudanteError`: Herda de `EstudanteError`
+- `constructor(campo: string)`: Recebe descrição do campo inválido
+- Mensagem flexível: Permite especificar qual validação falhou
+
+**Exemplos de uso:**
+
+```typescript
+if (id <= 0) {
+  throw new DadosInvalidosError("ID deve ser maior que zero");
+}
+if (!nome || nome.trim().length === 0) {
+  throw new DadosInvalidosError("Nome não pode ser vazio");
+}
+```
+
+**Hierarquia de Erros de Estudante:**
+
+```
+Error (classe nativa)
+  └── EstudanteError (base)
+       ├── EstudanteNaoEncontradoError
+       └── DadosInvalidosError
+```
+
+**Vantagem da hierarquia:**
+
+```typescript
+try {
+  // código
+} catch (error) {
+  if (error instanceof EstudanteError) {
+    // Captura TODOS os erros de estudante (EstudanteNaoEncontradoError E DadosInvalidosError)
+    console.error(`Erro relacionado a estudante: ${error.message}`);
+  }
+}
+```
 
 ### Erros do Projeto: TurmaError
 
 No arquivo `src/errors/TurmaError.ts`:
 
 ```typescript
-export class TurmaLotadaError extends Error {
+export class TurmaError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TurmaError";
+  }
+}
+
+export class TurmaLotadaError extends TurmaError {
   constructor(capacidade: number) {
     super(`Turma já atingiu a capacidade máxima de ${capacidade} estudantes.`);
     this.name = "TurmaLotadaError";
   }
 }
 
-export class EstudanteDuplicadoError extends Error {
+export class EstudanteDuplicadoError extends TurmaError {
   constructor(nomeEstudante: string) {
     super(`Estudante ${nomeEstudante} já está cadastrado na turma.`);
     this.name = "EstudanteDuplicadoError";
@@ -127,11 +242,123 @@ export class EstudanteDuplicadoError extends Error {
 }
 ```
 
-**Vantagens:**
+**Análise detalhada do código:**
+
+#### 1. Classe Base: `TurmaError`
+
+```typescript
+export class TurmaError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TurmaError";
+  }
+}
+```
+
+**Por que criar uma classe base?**
+
+- Agrupa todos os erros relacionados a turmas
+- Permite capturar qualquer erro de turma com um único `instanceof`
+- Mantém consistência com a estrutura de `EstudanteError`
+- Facilita expansão futura (novos erros de turma)
+
+**Elementos:**
+
+- `extends Error`: Herda da classe nativa `Error`
+- `export`: Permite importar em outros arquivos
+- Genérico: Aceita qualquer mensagem de erro
+
+#### 2. Classe: `TurmaLotadaError`
+
+```typescript
+export class TurmaLotadaError extends TurmaError {
+  constructor(capacidade: number) {
+    super(`Turma já atingiu a capacidade máxima de ${capacidade} estudantes.`);
+    this.name = "TurmaLotadaError";
+  }
+}
+```
+
+**Quando usar:**
+
+- Ao tentar adicionar estudante em turma que já atingiu o limite
+- No método `adicionarEstudante()` da classe `Turma`
+
+**Elementos:**
+
+- `extends TurmaError`: Herda de `TurmaError` (não diretamente de `Error`)
+- `constructor(capacidade: number)`: Recebe o número máximo de estudantes
+- Mensagem automática: Informa qual é a capacidade máxima
+- Contexto claro: Usuário sabe exatamente por que a operação falhou
+
+**Exemplo de uso:**
+
+```typescript
+if (this.estudantes.length >= Turma.CAPACIDADE_MAXIMA) {
+  throw new TurmaLotadaError(Turma.CAPACIDADE_MAXIMA);
+}
+// Resultado: TurmaLotadaError: Turma já atingiu a capacidade máxima de 2 estudantes.
+```
+
+#### 3. Classe: `EstudanteDuplicadoError`
+
+```typescript
+export class EstudanteDuplicadoError extends TurmaError {
+  constructor(nomeEstudante: string) {
+    super(`Estudante ${nomeEstudante} já está cadastrado na turma.`);
+    this.name = "EstudanteDuplicadoError";
+  }
+}
+```
+
+**Quando usar:**
+
+- Ao tentar adicionar um estudante que já existe na turma
+- Validação por ID (não pelo nome)
+- Previne duplicatas no array de estudantes
+
+**Elementos:**
+
+- `extends TurmaError`: Herda de `TurmaError`
+- `constructor(nomeEstudante: string)`: Recebe o nome para mensagem
+- Informativo: Diz qual estudante está duplicado
+- Amigável: Usa o nome do estudante (mais legível que ID)
+
+**Exemplo de uso:**
+
+```typescript
+if (this.estudantes.some((e) => e.id === estudante.id)) {
+  throw new EstudanteDuplicadoError(estudante.nome);
+}
+// Resultado: EstudanteDuplicadoError: Estudante Ana Maria já está cadastrado na turma.
+```
+
+**Hierarquia de Erros de Turma:**
+
+```
+Error (classe nativa)
+  └── TurmaError (base)
+       ├── TurmaLotadaError
+       └── EstudanteDuplicadoError
+```
+
+**Vantagens da hierarquia:**
 
 - Cada erro tem uma mensagem específica e contextual
 - Facilita o tratamento diferenciado de cada situação
 - Melhora a legibilidade do código
+- Permite capturar todos os erros de turma em um único bloco:
+
+```typescript
+try {
+  turma.adicionarEstudante(estudante);
+} catch (error) {
+  if (error instanceof TurmaError) {
+    // Captura TODOS os erros de turma
+    console.error(`Erro na turma: ${error.message}`);
+  }
+}
+```
 
 ---
 
@@ -155,34 +382,249 @@ Use `throw` quando detectar uma condição que:
 - **Impossibilita** a continuação normal do programa
 - **Requer** atenção imediata
 
-### Exemplo 1: Validação de ID no Construtor
+### Exemplo 1: Validação de Dados no Construtor de Estudante
 
-No arquivo `src/Estudante.ts`:
+No arquivo `src/Estudante.ts`, o construtor completo com validações:
 
 ```typescript
-constructor(id: number, nome: string) {
-  if (id <= 0) {
-    throw new DadosInvalidosError("ID deve ser maior que zero");
+import { DadosInvalidosError } from "./errors/EstudanteError";
+
+export default class Estudante {
+  id: number;
+  nome: string;
+  private presenca: number = 0;
+
+  constructor(id: number, nome: string) {
+    if (id <= 0) {
+      throw new DadosInvalidosError("ID deve ser maior que zero");
+    }
+    if (!nome || nome.trim().length === 0) {
+      throw new DadosInvalidosError("Nome não pode ser vazio");
+    }
+    this.id = id;
+    this.nome = nome;
+    this.presenca = 0;
   }
-  if (!nome || nome.trim().length === 0) {
-    throw new DadosInvalidosError("Nome não pode ser vazio");
+
+  public registrarPresenca(): void {
+    this.presenca++;
+    console.log(`${this.nome} teve presença registrada!`);
   }
-  this.id = id;
-  this.nome = nome;
-  this.presenca = 0;
+
+  presencas(): number {
+    return this.presenca;
+  }
 }
 ```
 
-**Análise linha por linha:**
+**Análise detalhada linha por linha:**
 
-1. `if (id <= 0)`: Verifica se o ID é inválido
-2. `throw new DadosInvalidosError("ID deve ser maior que zero")`: Lança erro personalizado
-3. `if (!nome || nome.trim().length === 0)`: Verifica se nome está vazio ou só tem espaços
-4. Se passar pelas validações, cria o estudante normalmente
+#### Importação
 
-### Exemplo 2: Validação de Capacidade da Turma
+```typescript
+import { DadosInvalidosError } from "./errors/EstudanteError";
+```
 
-No arquivo `src/Turma.ts`:
+- Importa o erro personalizado do arquivo de erros
+- Permite usar `DadosInvalidosError` no construtor
+
+#### Declaração da classe e atributos
+
+```typescript
+export default class Estudante {
+  id: number;
+  nome: string;
+  private presenca: number = 0;
+```
+
+- `export default`: Permite importar a classe em outros arquivos
+- `id` e `nome`: Atributos públicos
+- `private presenca`: Atributo privado, inicializado com 0
+
+#### Validação 1: ID
+
+```typescript
+if (id <= 0) {
+  throw new DadosInvalidosError("ID deve ser maior que zero");
+}
+```
+
+- **Condição**: `id <= 0` verifica se ID é zero ou negativo
+- **Ação**: Lança `DadosInvalidosError` com mensagem específica
+- **Interrupção**: Construtor para aqui, objeto não é criado
+- **Regra de negócio**: ID deve ser positivo
+
+**Casos cobertos:**
+
+```typescript
+new Estudante(0, "João"); // ❌ Erro: ID deve ser maior que zero
+new Estudante(-1, "Maria"); // ❌ Erro: ID deve ser maior que zero
+new Estudante(-99, "Ana"); // ❌ Erro: ID deve ser maior que zero
+```
+
+#### Validação 2: Nome vazio
+
+```typescript
+if (!nome || nome.trim().length === 0) {
+  throw new DadosInvalidosError("Nome não pode ser vazio");
+}
+```
+
+- **Condição dupla**:
+  - `!nome`: Verifica se nome é `null`, `undefined` ou string vazia
+  - `nome.trim().length === 0`: Verifica se só tem espaços em branco
+- **`trim()`**: Remove espaços do início e fim
+- **Ação**: Lança erro se nome for inválido
+
+**Casos cobertos:**
+
+```typescript
+new Estudante(1, ""); // ❌ Erro: Nome não pode ser vazio
+new Estudante(1, "   "); // ❌ Erro: Nome não pode ser vazio
+new Estudante(1, "\t\n"); // ❌ Erro: Nome não pode ser vazio
+```
+
+#### Atribuições (se passar nas validações)
+
+```typescript
+this.id = id;
+this.nome = nome;
+this.presenca = 0;
+```
+
+- Só executa se todas as validações passarem
+- Inicializa os atributos do objeto
+- Estudante é criado com sucesso
+
+#### Método registrarPresenca
+
+```typescript
+public registrarPresenca(): void {
+  this.presenca++;
+  console.log(`${this.nome} teve presença registrada!`);
+}
+```
+
+- Incrementa contador de presenças
+- Exibe mensagem no console
+- Método público, pode ser chamado externamente
+
+#### Método presencas (getter)
+
+```typescript
+presencas(): number {
+  return this.presenca;
+}
+```
+
+- Retorna o número de presenças
+- Permite acesso ao atributo privado `presenca`
+- Encapsulamento: leitura permitida, escrita controlada
+
+**Fluxo completo do construtor:**
+
+```
+Chamar: new Estudante(id, nome)
+  ↓
+Validar ID > 0?
+  ├─ NÃO → throw DadosInvalidosError → ERRO
+  └─ SIM → Continua
+       ↓
+  Validar nome não vazio?
+       ├─ NÃO → throw DadosInvalidosError → ERRO
+       └─ SIM → Continua
+            ↓
+       Atribuir valores
+            ↓
+       Objeto criado ✓
+```
+
+### Exemplo 2: Validações na Classe Turma
+
+No arquivo `src/Turma.ts`, classe completa com todos os métodos que lançam erros:
+
+```typescript
+import Estudante from "./Estudante";
+import { EstudanteNaoEncontradoError } from "./errors/EstudanteError";
+import { TurmaLotadaError, EstudanteDuplicadoError } from "./errors/TurmaError";
+
+export default class Turma {
+  private static CAPACIDADE_MAXIMA = 2;
+  id: number;
+  nome: string;
+  estudantes: Estudante[] = [];
+
+  constructor(id: number, nome: string) {
+    this.id = id;
+    this.nome = nome;
+  }
+
+  adicionarEstudante(estudante: Estudante): void {
+    if (this.estudantes.length >= Turma.CAPACIDADE_MAXIMA) {
+      throw new TurmaLotadaError(Turma.CAPACIDADE_MAXIMA);
+    }
+
+    if (this.estudantes.some((e) => e.id === estudante.id)) {
+      throw new EstudanteDuplicadoError(estudante.nome);
+    }
+
+    this.estudantes.push(estudante);
+    console.log(`Estudante ${estudante.nome} adicionado à turma ${this.nome}!`);
+  }
+
+  buscarEstudante(id: number): Estudante {
+    const estudante = this.estudantes.find((e) => e.id === id);
+
+    if (!estudante) {
+      throw new EstudanteNaoEncontradoError(id);
+    }
+
+    return estudante;
+  }
+
+  removerEstudante(id: number): void {
+    const estudante = this.buscarEstudante(id); // lança erro se não encontrar
+
+    const index = this.estudantes.indexOf(estudante);
+    this.estudantes.splice(index, 1);
+
+    console.log(`Estudante ${estudante.nome} removido da turma ${this.nome}!`);
+  }
+
+  resgistrarPresencaGeral(): void {
+    this.estudantes.forEach((estudante) => estudante.registrarPresenca());
+  }
+}
+```
+
+**Análise detalhada de cada método:**
+
+#### Importações
+
+```typescript
+import Estudante from "./Estudante";
+import { EstudanteNaoEncontradoError } from "./errors/EstudanteError";
+import { TurmaLotadaError, EstudanteDuplicadoError } from "./errors/TurmaError";
+```
+
+- Importa a classe `Estudante` para tipar os parâmetros
+- Importa `EstudanteNaoEncontradoError` do arquivo de erros de estudante
+- Importa `TurmaLotadaError` e `EstudanteDuplicadoError` do arquivo de erros de turma
+
+#### Atributos da classe
+
+```typescript
+private static CAPACIDADE_MAXIMA = 2;
+id: number;
+nome: string;
+estudantes: Estudante[] = [];
+```
+
+- `CAPACIDADE_MAXIMA`: Constante privada e estática (2 para testes, normalmente seria 40)
+- `id` e `nome`: Identificação da turma
+- `estudantes`: Array de objetos Estudante (inicializado vazio)
+
+#### Método 1: `adicionarEstudante`
 
 ```typescript
 adicionarEstudante(estudante: Estudante): void {
@@ -190,28 +632,175 @@ adicionarEstudante(estudante: Estudante): void {
     throw new TurmaLotadaError(Turma.CAPACIDADE_MAXIMA);
   }
 
-  if (this.estudantes.some(e => e.id === estudante.id)) {
+  if (this.estudantes.some((e) => e.id === estudante.id)) {
     throw new EstudanteDuplicadoError(estudante.nome);
   }
 
   this.estudantes.push(estudante);
+  console.log(`Estudante ${estudante.nome} adicionado à turma ${this.nome}!`);
 }
 ```
 
-**Análise:**
+**Validação 1: Turma lotada**
 
-1. **Primeira validação**: Verifica se a turma está cheia
+```typescript
+if (this.estudantes.length >= Turma.CAPACIDADE_MAXIMA) {
+  throw new TurmaLotadaError(Turma.CAPACIDADE_MAXIMA);
+}
+```
 
-   - `this.estudantes.length >= Turma.CAPACIDADE_MAXIMA`
-   - Se estiver, lança `TurmaLotadaError`
+- **Verifica**: Se o número atual de estudantes atingiu o limite
+- **Ação**: Lança `TurmaLotadaError` com a capacidade máxima
+- **Resultado**: "Turma já atingiu a capacidade máxima de 2 estudantes."
+- **Impede**: Adicionar mais estudantes que o permitido
 
-2. **Segunda validação**: Verifica se o estudante já está na turma
+**Validação 2: Estudante duplicado**
 
-   - `this.estudantes.some(e => e.id === estudante.id)`
-   - `some()` retorna `true` se encontrar algum estudante com mesmo ID
-   - Se encontrar, lança `EstudanteDuplicadoError`
+```typescript
+if (this.estudantes.some((e) => e.id === estudante.id)) {
+  throw new EstudanteDuplicadoError(estudante.nome);
+}
+```
 
-3. **Ação normal**: Se passar pelas validações, adiciona o estudante
+- **`some()`**: Percorre o array e retorna `true` se encontrar
+- **Compara**: IDs de estudantes (não nomes, pois podem ser iguais)
+- **Ação**: Lança `EstudanteDuplicadoError` com o nome do estudante
+- **Resultado**: "Estudante Ana Maria já está cadastrado na turma."
+- **Impede**: Duplicatas no array
+
+**Ação normal:**
+
+```typescript
+this.estudantes.push(estudante);
+console.log(`Estudante ${estudante.nome} adicionado à turma ${this.nome}!`);
+```
+
+- Adiciona o estudante ao array
+- Exibe mensagem de sucesso
+
+#### Método 2: `buscarEstudante`
+
+```typescript
+buscarEstudante(id: number): Estudante {
+  const estudante = this.estudantes.find((e) => e.id === id);
+
+  if (!estudante) {
+    throw new EstudanteNaoEncontradoError(id);
+  }
+
+  return estudante;
+}
+```
+
+**Busca:**
+
+```typescript
+const estudante = this.estudantes.find((e) => e.id === id);
+```
+
+- **`find()`**: Retorna o primeiro elemento que satisfaz a condição
+- **Retorna**: O objeto `Estudante` se encontrar, ou `undefined` se não encontrar
+
+**Validação:**
+
+```typescript
+if (!estudante) {
+  throw new EstudanteNaoEncontradoError(id);
+}
+```
+
+- **Verifica**: Se `estudante` é `undefined` (não encontrado)
+- **Ação**: Lança `EstudanteNaoEncontradoError` com o ID buscado
+- **Resultado**: "Estudante com ID 999 não encontrado ou não pertence à turma."
+- **Garante**: Método só retorna se realmente encontrar
+
+**Retorno:**
+
+```typescript
+return estudante;
+```
+
+- Retorna o estudante encontrado
+- TypeScript sabe que não é `undefined` aqui (validado acima)
+
+#### Método 3: `removerEstudante`
+
+```typescript
+removerEstudante(id: number): void {
+  const estudante = this.buscarEstudante(id); // lança erro se não encontrar
+
+  const index = this.estudantes.indexOf(estudante);
+  this.estudantes.splice(index, 1);
+
+  console.log(`Estudante ${estudante.nome} removido da turma ${this.nome}!`);
+}
+```
+
+**Reutilização de validação:**
+
+```typescript
+const estudante = this.buscarEstudante(id);
+```
+
+- **Chama**: Método `buscarEstudante()` que já valida
+- **Se não encontrar**: `buscarEstudante` lança `EstudanteNaoEncontradoError`
+- **Se encontrar**: Retorna o objeto e continua
+- **DRY**: Não repete código de validação
+
+**Remoção:**
+
+```typescript
+const index = this.estudantes.indexOf(estudante);
+this.estudantes.splice(index, 1);
+```
+
+- **`indexOf()`**: Encontra a posição do estudante no array
+- **`splice(index, 1)`**: Remove 1 elemento na posição `index`
+- **Modifica**: O array original
+
+**Mensagem de sucesso:**
+
+```typescript
+console.log(`Estudante ${estudante.nome} removido da turma ${this.nome}!`);
+```
+
+#### Método 4: `resgistrarPresencaGeral` (sem validações)
+
+```typescript
+resgistrarPresencaGeral(): void {
+  this.estudantes.forEach((estudante) => estudante.registrarPresenca());
+}
+```
+
+- **`forEach()`**: Percorre todos os estudantes
+- **Ação**: Chama `registrarPresenca()` de cada um
+- **Sem validação**: Assume que array já foi validado
+
+**Fluxo de validações na Turma:**
+
+```
+ADICIONAR ESTUDANTE
+  ↓
+Turma cheia?
+  ├─ SIM → throw TurmaLotadaError
+  └─ NÃO → Continua
+       ↓
+  Estudante já existe?
+       ├─ SIM → throw EstudanteDuplicadoError
+       └─ NÃO → Adiciona ✓
+
+BUSCAR ESTUDANTE
+  ↓
+Estudante encontrado?
+  ├─ NÃO → throw EstudanteNaoEncontradoError
+  └─ SIM → Retorna estudante ✓
+
+REMOVER ESTUDANTE
+  ↓
+Buscar (pode lançar erro)
+  ↓
+Remover do array ✓
+```
 
 ---
 
@@ -358,6 +947,422 @@ try {
 - **Não usa `process.exit(1)`**: O programa pode continuar mesmo com erro
 - **Múltiplos tipos de erro**: Trata `EstudanteDuplicadoError` e `TurmaLotadaError` separadamente
 - **Erro genérico**: Último `else` captura qualquer outro tipo de erro
+
+### Exemplo 3: Código Completo do index.ts
+
+O arquivo `src/index.ts` demonstra todos os conceitos de tratamento de erros aplicados no projeto:
+
+```typescript
+import Estudante from "./Estudante";
+import RegistroDisciplina from "./RegistroDisciplina";
+import RegistroPresenca from "./RegistroPresenca";
+import RegistroTurma from "./RegistroTurma";
+import RelatorioFrequencia from "./RelatorioFrequencia";
+import Turma from "./Turma";
+import RegistroComAlerta from "./RegistroComAlerta";
+import {
+  DadosInvalidosError,
+  EstudanteNaoEncontradoError,
+} from "./errors/EstudanteError";
+import { TurmaLotadaError, EstudanteDuplicadoError } from "./errors/TurmaError";
+
+const estudantes: Estudante[] = [];
+
+let estudante1!: Estudante;
+let estudante2!: Estudante;
+let estudante3!: Estudante;
+let estudante4!: Estudante;
+
+try {
+  estudante1 = new Estudante(1, "Ana Maria");
+  estudantes.push(estudante1);
+  estudante2 = new Estudante(2, "João Pedro");
+  estudantes.push(estudante2);
+  estudante3 = new Estudante(3, "Maria Clara");
+  estudantes.push(estudante3);
+  estudante4 = new Estudante(4, "Carlos Eduardo");
+  estudantes.push(estudante4);
+
+  // Teste de erro: ID inválido
+  // const estudanteInvalido = new Estudante(-1, "Teste");
+
+  // Teste de erro: Nome vazio
+  // const estudanteInvalido2 = new Estudante(4, "");
+} catch (error) {
+  if (error instanceof DadosInvalidosError) {
+    console.error(`❌ Erro ao criar estudante: ${error.message}`);
+    process.exit(1);
+  } else {
+    console.error(`❌ Erro inesperado: ${error}`);
+    process.exit(1);
+  }
+}
+
+RelatorioFrequencia.gerarRelatorioMensal(estudantes);
+
+estudante1.registrarPresenca();
+estudante2.registrarPresenca();
+estudante3.registrarPresenca();
+estudante1.registrarPresenca();
+RelatorioFrequencia.gerarRelatorioMensal(estudantes);
+
+const info01 = new Turma(1, "Informática 1º Ano");
+const info02 = new Turma(1, "Informática 2º Ano");
+
+try {
+  info01.adicionarEstudante(estudante1);
+
+  // Teste de erro: adicionar estudante duplicado
+  // info01.adicionarEstudante(estudante1);
+
+  info02.adicionarEstudante(estudante2);
+  info02.adicionarEstudante(estudante3);
+  // Teste de erro: turma lotada
+  // info02.adicionarEstudante(estudante4);
+} catch (error) {
+  if (error instanceof EstudanteDuplicadoError) {
+    console.error(`❌ ${error.message}`);
+  } else if (error instanceof TurmaLotadaError) {
+    console.error(`❌ ${error.message}`);
+  } else {
+    console.error(`❌ Erro inesperado: ${error}`);
+  }
+}
+
+try {
+  const estudanteEncontrado = info01.buscarEstudante(estudante1.id);
+  console.log(`✅ Encontrado: ${estudanteEncontrado.nome}`);
+
+  const estudanteInexistente = info01.buscarEstudante(estudante2.id);
+  console.log(`Encontrado: ${estudanteInexistente.nome}`);
+} catch (error) {
+  if (error instanceof EstudanteNaoEncontradoError) {
+    console.error(`❌ ${error.message}`);
+  }
+}
+
+RelatorioFrequencia.gerarRelatorioMensal(estudantes);
+info01.resgistrarPresencaGeral();
+RelatorioFrequencia.gerarRelatorioMensal(estudantes);
+info02.resgistrarPresencaGeral();
+RelatorioFrequencia.gerarRelatorioMensal(estudantes);
+
+const registrarPresenca1 = new RegistroPresenca(estudante1, new Date());
+registrarPresenca1.registrar();
+
+const registrarPresencaDisciplinaLTP = new RegistroDisciplina(
+  estudante2,
+  new Date(),
+  "LTP"
+);
+registrarPresencaDisciplinaLTP.registrar();
+RelatorioFrequencia.gerarRelatorioMensal(estudantes);
+
+const resgistrarPresencaTurmaLTP = new RegistroTurma(
+  estudante1,
+  new Date(),
+  info01
+);
+resgistrarPresencaTurmaLTP.registrar();
+
+const registroComAlerta1 = new RegistroComAlerta(
+  estudante1,
+  new Date(),
+  "Matemática"
+);
+registroComAlerta1.registrar();
+
+const registroComAlerta2 = new RegistroComAlerta(
+  estudante2,
+  new Date(),
+  "Português"
+);
+registroComAlerta2.registrar();
+
+RelatorioFrequencia.gerarRelatorioMensal(estudantes);
+```
+
+**Análise completa do código:**
+
+#### 1. Importações de Erros
+
+```typescript
+import {
+  DadosInvalidosError,
+  EstudanteNaoEncontradoError,
+} from "./errors/EstudanteError";
+import { TurmaLotadaError, EstudanteDuplicadoError } from "./errors/TurmaError";
+```
+
+**Por quê importar os erros?**
+
+- Permite usar `instanceof` para identificar tipos específicos de erro
+- Necessário para tratamento diferenciado de cada tipo
+- Sem as importações, só conseguiríamos capturar erros genéricos
+
+#### 2. Declaração de Variáveis com `!`
+
+```typescript
+let estudante1!: Estudante;
+let estudante2!: Estudante;
+let estudante3!: Estudante;
+let estudante4!: Estudante;
+```
+
+**O que significa `!`?**
+
+- **Definite Assignment Assertion** (Asserção de Atribuição Definitiva)
+- Diz ao TypeScript: "Confie em mim, esta variável será atribuída antes de ser usada"
+- Necessário porque as variáveis são declaradas FORA do `try` mas atribuídas DENTRO
+
+**Por que não declarar dentro do try?**
+
+```typescript
+// ❌ Não funciona:
+try {
+  const estudante1 = new Estudante(1, "Ana");
+}
+estudante1.registrarPresenca(); // ERRO: estudante1 não existe aqui (escopo)
+```
+
+**Alternativas ao `!`:**
+
+```typescript
+// Opção 1: Nullable (mais verboso)
+let estudante1: Estudante | null = null;
+// depois precisa verificar: if (estudante1) { ... }
+
+// Opção 2: Com `!` + process.exit (mais limpo) ✓
+let estudante1!: Estudante;
+// garantido por process.exit(1) no catch
+```
+
+#### 3. Try-Catch para Criação de Estudantes (Erro Crítico)
+
+```typescript
+try {
+  estudante1 = new Estudante(1, "Ana Maria");
+  estudantes.push(estudante1);
+  estudante2 = new Estudante(2, "João Pedro");
+  estudantes.push(estudante2);
+  estudante3 = new Estudante(3, "Maria Clara");
+  estudantes.push(estudante3);
+  estudante4 = new Estudante(4, "Carlos Eduardo");
+  estudantes.push(estudante4);
+
+  // Testes comentados para validação
+  // const estudanteInvalido = new Estudante(-1, "Teste");
+  // const estudanteInvalido2 = new Estudante(4, "");
+} catch (error) {
+  if (error instanceof DadosInvalidosError) {
+    console.error(`❌ Erro ao criar estudante: ${error.message}`);
+    process.exit(1);
+  } else {
+    console.error(`❌ Erro inesperado: ${error}`);
+    process.exit(1);
+  }
+}
+```
+
+**Fluxo de execução:**
+
+```
+Tenta criar estudante1
+  ↓ (sucesso)
+Adiciona ao array
+  ↓
+Tenta criar estudante2
+  ↓ (sucesso)
+Adiciona ao array
+  ↓
+... (continua para estudante3 e 4)
+  ↓
+Se QUALQUER erro ocorrer:
+  ↓
+Vai para catch
+  ↓
+Verifica tipo do erro
+  ↓
+Exibe mensagem apropriada
+  ↓
+process.exit(1) → PROGRAMA ENCERRA
+```
+
+**Por que usar `process.exit(1)`?**
+
+- **Erro crítico**: Sem estudantes, o resto do programa não faz sentido
+- **Código 1**: Indica que houve erro (código 0 = sucesso)
+- **Previne bugs**: Garante que variáveis não fiquem `undefined`
+
+**Testes comentados:**
+
+```typescript
+// Descomentar para testar ID inválido:
+// const estudanteInvalido = new Estudante(-1, "Teste");
+// Resultado: ❌ Erro ao criar estudante: Dados inválidos: ID deve ser maior que zero
+//            [Programa encerra]
+
+// Descomentar para testar nome vazio:
+// const estudanteInvalido2 = new Estudante(4, "");
+// Resultado: ❌ Erro ao criar estudante: Dados inválidos: Nome não pode ser vazio
+//            [Programa encerra]
+```
+
+#### 4. Try-Catch para Adicionar Estudantes em Turmas (Erro Não-Crítico)
+
+```typescript
+const info01 = new Turma(1, "Informática 1º Ano");
+const info02 = new Turma(1, "Informática 2º Ano");
+
+try {
+  info01.adicionarEstudante(estudante1);
+  // info01.adicionarEstudante(estudante1); // teste duplicado
+
+  info02.adicionarEstudante(estudante2);
+  info02.adicionarEstudante(estudante3);
+  // info02.adicionarEstudante(estudante4); // teste turma lotada
+} catch (error) {
+  if (error instanceof EstudanteDuplicadoError) {
+    console.error(`❌ ${error.message}`);
+  } else if (error instanceof TurmaLotadaError) {
+    console.error(`❌ ${error.message}`);
+  } else {
+    console.error(`❌ Erro inesperado: ${error}`);
+  }
+}
+```
+
+**Diferenças do try-catch anterior:**
+
+- **SEM `process.exit(1)`**: Programa continua mesmo com erro
+- **Múltiplos tipos**: Trata 2 tipos de erro diferentes
+- **Menos crítico**: Falhar ao adicionar em turma não impede o resto
+
+**Por que NÃO encerrar o programa?**
+
+- Adicionar em turma é uma operação isolada
+- Se falhar, outras partes do sistema podem continuar
+- Usuário pode corrigir e tentar novamente
+
+**Testes disponíveis:**
+
+```typescript
+// Teste 1: Estudante duplicado
+// info01.adicionarEstudante(estudante1);
+// Resultado: ❌ Estudante Ana Maria já está cadastrado na turma.
+//            [Programa CONTINUA]
+
+// Teste 2: Turma lotada (CAPACIDADE_MAXIMA = 2)
+// info02.adicionarEstudante(estudante4);
+// Resultado: ❌ Turma já atingiu a capacidade máxima de 2 estudantes.
+//            [Programa CONTINUA]
+```
+
+#### 5. Try-Catch para Buscar Estudante
+
+```typescript
+try {
+  const estudanteEncontrado = info01.buscarEstudante(estudante1.id);
+  console.log(`✅ Encontrado: ${estudanteEncontrado.nome}`);
+
+  const estudanteInexistente = info01.buscarEstudante(estudante2.id);
+  console.log(`Encontrado: ${estudanteInexistente.nome}`);
+} catch (error) {
+  if (error instanceof EstudanteNaoEncontradoError) {
+    console.error(`❌ ${error.message}`);
+  }
+}
+```
+
+**O que acontece:**
+
+**Primeira busca (estudante1):**
+
+```typescript
+const estudanteEncontrado = info01.buscarEstudante(estudante1.id);
+```
+
+- `estudante1` FOI adicionado em `info01`
+- Busca encontra o estudante
+- Exibe: `✅ Encontrado: Ana Maria`
+- Continua normalmente
+
+**Segunda busca (estudante2):**
+
+```typescript
+const estudanteInexistente = info01.buscarEstudante(estudante2.id);
+```
+
+- `estudante2` NÃO foi adicionado em `info01` (está em `info02`)
+- `buscarEstudante` não encontra
+- Lança `EstudanteNaoEncontradoError`
+- Vai para o `catch`
+- Exibe: `❌ Estudante com ID 2 não encontrado ou não pertence à turma.`
+
+**Por que o segundo `console.log` nunca executa?**
+
+```typescript
+console.log(`Encontrado: ${estudanteInexistente.nome}`); // ← Nunca chega aqui
+```
+
+- Quando erro é lançado, execução salta direto para o `catch`
+- Linhas após o `throw` no `try` são ignoradas
+
+**Fluxo visual:**
+
+```
+try {
+  buscar estudante1 → ✓ encontrado
+  console.log("✅ Encontrado...") → executa
+
+  buscar estudante2 → ✗ não encontrado
+  ↓ throw EstudanteNaoEncontradoError
+  ↓ [pula para catch]
+  console.log("Encontrado...") → NUNCA executa
+}
+catch {
+  exibe erro ❌
+}
+```
+
+#### 6. Resto do Código (Sem Erros)
+
+```typescript
+RelatorioFrequencia.gerarRelatorioMensal(estudantes);
+info01.resgistrarPresencaGeral();
+info02.resgistrarPresencaGeral();
+
+const registrarPresenca1 = new RegistroPresenca(estudante1, new Date());
+registrarPresenca1.registrar();
+
+// ... outros registros ...
+```
+
+- Código sem validações especiais
+- Assume que objetos já foram validados anteriormente
+- Operações normais do sistema
+
+**Resumo dos 3 Try-Catch no index.ts:**
+
+| Try-Catch              | Objetivo                     | Erros Capturados                              | Usa process.exit? | Por quê?                                    |
+| ---------------------- | ---------------------------- | --------------------------------------------- | ----------------- | ------------------------------------------- |
+| #1 Criar Estudantes    | Criar 4 estudantes           | `DadosInvalidosError`                         | ✅ SIM            | Erro crítico - sem estudantes nada funciona |
+| #2 Adicionar em Turmas | Adicionar em info01 e info02 | `EstudanteDuplicadoError`, `TurmaLotadaError` | ❌ NÃO            | Erro não-crítico - programa pode continuar  |
+| #3 Buscar Estudante    | Buscar em info01             | `EstudanteNaoEncontradoError`                 | ❌ NÃO            | Erro esperado - demonstração de busca       |
+
+**Estratégias diferentes para erros diferentes:**
+
+```
+ERRO CRÍTICO (criar estudantes)
+├─ Captura erro
+├─ Exibe mensagem
+└─ process.exit(1) ← ENCERRA PROGRAMA
+
+ERRO NÃO-CRÍTICO (turma/busca)
+├─ Captura erro
+├─ Exibe mensagem
+└─ Continua programa ← PROGRAMA SEGUE
+```
 
 ---
 
@@ -852,9 +1857,3 @@ catch (error) {
 2. Crie sistema de log de erros em arquivo
 3. Adicione validação de e-mail com erro específico
 4. Implemente retry automático para erros temporários
-
----
-
-**Desenvolvido para a disciplina de Linguagem Técnica de Programação**  
-**IFMS - Campus Aquidauana**  
-**Novembro de 2025**

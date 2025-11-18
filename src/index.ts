@@ -5,7 +5,10 @@ import RegistroTurma from "./RegistroTurma";
 import RelatorioFrequencia from "./RelatorioFrequencia";
 import Turma from "./Turma";
 import RegistroComAlerta from "./RegistroComAlerta";
-import { DadosInvalidosError } from "./errors/EstudanteError";
+import {
+  DadosInvalidosError,
+  EstudanteNaoEncontradoError,
+} from "./errors/EstudanteError";
 import { TurmaLotadaError, EstudanteDuplicadoError } from "./errors/TurmaError";
 
 const estudantes: Estudante[] = [];
@@ -13,6 +16,7 @@ const estudantes: Estudante[] = [];
 let estudante1!: Estudante;
 let estudante2!: Estudante;
 let estudante3!: Estudante;
+let estudante4!: Estudante;
 
 try {
   estudante1 = new Estudante(1, "Ana Maria");
@@ -21,6 +25,8 @@ try {
   estudantes.push(estudante2);
   estudante3 = new Estudante(3, "Maria Clara");
   estudantes.push(estudante3);
+  estudante4 = new Estudante(4, "Carlos Eduardo");
+  estudantes.push(estudante4);
 
   // Teste de erro: ID inválido
   // const estudanteInvalido = new Estudante(-1, "Teste");
@@ -47,12 +53,18 @@ estudante1.registrarPresenca();
 RelatorioFrequencia.gerarRelatorioMensal(estudantes);
 
 const info01 = new Turma(1, "Informática 1º Ano");
+const info02 = new Turma(1, "Informática 2º Ano");
 
 try {
   info01.adicionarEstudante(estudante1);
 
   // Teste de erro: adicionar estudante duplicado
   // info01.adicionarEstudante(estudante1);
+
+  info02.adicionarEstudante(estudante2);
+  info02.adicionarEstudante(estudante3);
+  // Teste de erro: turma lotada
+  // info02.adicionarEstudante(estudante4);
 } catch (error) {
   if (error instanceof EstudanteDuplicadoError) {
     console.error(`❌ ${error.message}`);
@@ -63,9 +75,17 @@ try {
   }
 }
 
-const info02 = new Turma(1, "Informática 2º Ano");
-info02.adicionarEstudante(estudante2);
-info02.adicionarEstudante(estudante3);
+try {
+  const estudanteEncontrado = info01.buscarEstudante(estudante1.id);
+  console.log(`✅ Encontrado: ${estudanteEncontrado.nome}`);
+
+  const estudanteInexistente = info01.buscarEstudante(estudante2.id);
+  console.log(`Encontrado: ${estudanteInexistente.nome}`);
+} catch (error) {
+  if (error instanceof EstudanteNaoEncontradoError) {
+    console.error(`❌ ${error.message}`);
+  }
+}
 RelatorioFrequencia.gerarRelatorioMensal(estudantes);
 info01.resgistrarPresencaGeral();
 RelatorioFrequencia.gerarRelatorioMensal(estudantes);
